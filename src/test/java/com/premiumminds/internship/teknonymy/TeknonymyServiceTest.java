@@ -47,4 +47,25 @@ public class TeknonymyServiceTest {
     String expected = "father of Holy";
     assertEquals(result, expected);
   }
+  @Test
+  public void PersonGrandTest() {
+    Person person = new Person(
+        "John",
+        'F',
+        new Person[]{ 
+          new Person("Holy",'F', 
+              new Person[]{ new Person("Ze",'F', 
+                              new Person[] {new Person("Manuel",'F', null, LocalDateTime.of(1046, 1, 1, 0, 0)),
+                                            new Person("Joaquim",'F', null, LocalDateTime.of(1043, 1, 1, 0, 0))}, 
+                              LocalDateTime.of(1060, 1, 1, 0, 0)), 
+                            new Person("Jupyter",'F',
+                              new Person[] {new Person("Manuel",'F', null, LocalDateTime.of(1046, 1, 1, 0, 0)),
+                                            new Person("Ze",'F', null, LocalDateTime.of(1040, 1, 1, 0, 0))}
+                        , LocalDateTime.of(1010, 1, 1, 0, 0))}, 
+          LocalDateTime.of(1046, 1, 1, 0, 0)) },
+        LocalDateTime.of(1046, 1, 1, 0, 0));
+    String result = new TeknonymyService().getTeknonymy(person);
+    String expected = "great-grandmother of Ze";
+    assertEquals(result, expected);
+  }
 }
