@@ -4,17 +4,7 @@ import com.premiumminds.internship.teknonymy.Person;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.HashMap;
-import java.util.Map;
 
-// 0 - proprio
-// profundidade maxima = 1 -> relação de pais 
-// profundidade maxima = 2 -> relação de avos (+grand)
-// profundidade maxima = 3 -> relação de bis (+great)
-
-// distancia de geração = nº da geração
-
-// maximo = (distancia de geração,nome do sucessor,agregado de nomes)
 class TeknonymyService implements ITeknonymyService {
 
   /**
@@ -24,68 +14,69 @@ class TeknonymyService implements ITeknonymyService {
    * @return String which is the Teknonymy Name 
    */
   public String getTeknonymy(Person person) {
-    String prefix = "";
 
+    // If there are no children, the depth is 0
     if (person.children() == null || person.children().length == 0) {
-      return ""; // Se não tiver filhos, a profundidade é 0
-    }
-    // Male case
-    if (person.sex() == 'M'){
-      prefix = "father of ";
-    }
-    // Female case
-    else if (person.sex() == 'F'){
-      prefix = "mother of ";
-    }
-    return DFS(person,prefix);
-  }
-
-  public String DFS(Person person,String sufix){
-
-    // inicializações
-    Map<Integer, String> prefixes = new HashMap<>() {{
-        put(1, "");
-        put(2, "grand");
-    }};
-
-    String prefix = "";
-    int profundidadeMaxima = 0;
-    Person Pessoa_mais_distante = person;
-    Deque<Object[]> deque = new ArrayDeque<>();
-    deque.addLast(new Object[]{person,0});
-
-    // nao tem filhos
-    if (person.children() == null){
       return "";
     }
+    String sufix = person.sex() == 'M' ? "father of " : "mother of ";
+    return DFS(person, sufix);
+
+  }
+
+  /**
+   * Method to compute the Teknonymy Name based on the deepest person in the genealogical tree
+   * with the given person as the root.
+   * 
+   * @param person Person object representing the root of the tree
+   * @param suffix String suffix ("mother of " or "father of ")
+   * @return String representing the computed Teknonymy Name
+   */
+  public String DFS(Person person,String sufix){
+
+    // Prefix builders to construct the Teknonymy Name
+    StringBuilder prefixBuilder = new StringBuilder();
+    StringBuilder greatprefixBuilder = new StringBuilder();
+    int profundidadeMaxima = 0;
+    Person pessoaMaisDistante = person;
+
+    // Deque initialization for depth-first search
+    Deque<Object[]> deque = new ArrayDeque<>();
+    deque.addLast(new Object[]{person, 0});
 
     while (!deque.isEmpty()) {
-      Object[] tuple =  deque.removeLast();
-      Person currentPerson = (Person) tuple[0];
-      Integer depth = (Integer) tuple[1];
+        Object[] tuple = deque.removeLast();
+        Person currentPerson = (Person) tuple[0];
+        int depth = (int) tuple[1];
 
-      // se a profundidade for maior ficamos com o novo
-      if (depth > profundidadeMaxima){
-        if (depth >= 3){
-          prefix = "great-" + prefix;
-        }
-        else{
-          prefix += prefixes.get(depth);
-        }
-        profundidadeMaxima = depth;
-        Pessoa_mais_distante = currentPerson;
-      }
-      // ficamos com o mais velho neste caso
-      else if (depth == profundidadeMaxima && currentPerson.dateOfBirth().compareTo(Pessoa_mais_distante.dateOfBirth()) < 0){
-        Pessoa_mais_distante = currentPerson;
-      }
+        // Building the prefix dynamically based on depth
+        if (depth > profundidadeMaxima) {
 
-      if (currentPerson.children() != null) {
+            if (depth == 2) {
+              prefixBuilder.append("grand");
+
+            } else if (depth >= 3) {
+              // The string is symmetric, meaning it can be constructed in O(1)
+              greatprefixBuilder.append("great-");
+            }
+            profundidadeMaxima = depth;
+            pessoaMaisDistante = currentPerson;
+
+        } else if (depth == profundidadeMaxima && currentPerson.dateOfBirth().isBefore(pessoaMaisDistante.dateOfBirth())) {
+          // Updating the furthest person based on date of birth if depths are equal
+          pessoaMaisDistante = currentPerson;
+        }
+
+        // Adding children to the deque
+        if (currentPerson.children() != null) {
           for (Person child : currentPerson.children()) {
-              deque.addLast(new Object[]{child, depth+1});
+            deque.addLast(new Object[]{child, depth + 1});
           }
-      }
+        }
     }
-    return prefix + sufix + Pessoa_mais_distante.name();
+    // Constructing the final Teknonymy Name with appropriate prefix, suffix, and furthest person's name
+    greatprefixBuilder.append(prefixBuilder).append(sufix).append(pessoaMaisDistante.name());
+    
+    return greatprefixBuilder.toString();
   }
 }
